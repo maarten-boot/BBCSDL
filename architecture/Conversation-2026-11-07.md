@@ -55,3 +55,7 @@ tracks `origin/master`, so the planning commits landed on the fork's `master`.
 Offered: separate remote branch + reset fork master (force-push), and an
 `upstream` remote for rtrussell/BBCSDL. User: no upstream remote for now.
 Branch question still open.
+
+## Move commits off master
+User: "move them". `git push` failed here (no SSH key). User: Claude cannot
+push; show what to push instead (rule recorded). Commands given to the user.
