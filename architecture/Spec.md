@@ -1,6 +1,6 @@
 # Spec — BBC BASIC console edition (BBCTTY) on rosco-m68k, compared with bbc-basic-68k
 
-Status: DRAFT v0.2 (2026-11-07). Open decisions are marked **OPEN**.
+Status: v0.3 (2026-11-07). D1, D2 decided; D3 open.
 
 ## S1 Goal
 S1.1 Port this project's portable C interpreter (console edition: `bbmain.c`,
@@ -15,8 +15,20 @@ S2.2 Runtime: bare metal on the rosco firmware (v2.42+), loaded as `ROSCODE1.BIN
 S2.3 Memory: the board's 1 MB plus the 4 MB expansion (5 MB) is the reference
      configuration, as for bbc-basic-68k; must still start with 1 MB.
 S2.4 The 68010 faults on odd-address word/long accesses: the port must never
-     perform them (r68k emulates this fault).
-S2.5 Byte order: the 68k is big-endian; BBCSDL assumes little-endian. **OPEN** (D1).
+     perform them (r68k emulates this fault). D2 = a: fixed in the source.
+     The LE macros of S2.5.1 are byte-wise, so they are alignment-safe; the
+     remaining raw casts are converted where they can be unaligned.
+S2.5 Byte order (D1 = b): everything BASIC can see is little-endian, as in
+     BBCZ80 and bbc-basic-68k: `!`/`?`/`^`/`$` indirection, variables and
+     descriptors on the heap, tokenised programs, files.
+S2.5.1 Done by redefining BBC.h's heap access macros (ILOAD/ISTORE, TLOAD/TSTORE,
+     ULOAD/USTORE, SLOAD/SSTORE, VLOAD/VSTORE, CLOAD/CSTORE, NLOAD/NSTORE) under
+     `#ifdef __m68k__` to byte-wise little-endian access (upstream hint).
+S2.5.2 NLOAD/NSTORE (VAR, 10 bytes): type word `t` at offset 8 (LE 16-bit); if
+     `t == -1` (string) `p` and `l` are two LE 32-bit words, otherwise bytes 0-7 are
+     one LE 64-bit value (long long or double).
+S2.5.3 Heap accesses that bypass the macros (raw casts) are found by tests and
+     converted to the macros.
 S2.6 Floating point: `double` (64-bit) as on ARM, not `long double`
      (m68k 96-bit extended would be emulated in software and be slow).
 
@@ -66,8 +78,7 @@ S9.1 CI action steps are pinned to a full commit SHA, with the version tag in a
      comment; the latest workable version is used, or the reason it can't be is documented.
 S9.2 Container images are pinned by digest for the same reason.
 
-## Open decisions
-- **D1 Byte order** (S2.5) — see Conversation log.
-- **D2 Unaligned accesses** (S2.4) — strategy for ~110 raw pointer casts
-  (mostly `bbexec.c`).
-- **D3 Inline assembler** (S5.4).
+## Decisions
+- **D1 Byte order** = (b) little-endian as seen by BASIC (S2.5), 2026-11-07, user + upstream hint.
+- **D2 Unaligned accesses** = (a) fixed in the source (S2.4), 2026-11-07.
+- **D3 Inline assembler** (S5.4) — OPEN.

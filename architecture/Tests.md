@@ -8,7 +8,9 @@ Each test is traced to a Spec item.
 | T2 | S2.4 | Boot on r68k with odd-address faults enabled: no address error during start-up and the test suite | todo |
 | T3 | S5.1 | `PRINT 1+1`, `PRINT "A"+"B"`, `FOR`/`NEXT`, `REPEAT`, `DEF PROC/FN` give the reference output | todo |
 | T4 | S2.6 | Float output: `PRINT PI`, `SQR2`, `EXP1`, `1/3` match the Linux reference (double) | todo |
-| T5 | S2.5 | `!`, `?`, `$`, `^` indirection consistent with the chosen byte order (D1) | todo |
+| T5 | S2.5 | `A%=&12345678:PRINT ~?^A%, ~A%?1` → `78 56`; `!` on odd addresses; same bytes as on Linux | todo |
+| T5a | S2.5.2 | `PRINT ~^A` dump of an int, a float and a string variable equals the Linux bytes | todo |
+| T5b | S2.5 | A program SAVEd on the rosco LOADs on Linux BBC BASIC and in bbc-basic-68k, and vice versa | todo |
 | T6 | S5.2 | `TIME` advances 100/s (±1 %) on MAME | todo |
 | T7 | S5.2 | `SAVE`/`LOAD`/`OPENOUT`/`BPUT#`/`BGET#` round-trip on the SD card | todo |
 | T8 | S5.2 | ESCape stops a running loop and returns to `>` | todo |

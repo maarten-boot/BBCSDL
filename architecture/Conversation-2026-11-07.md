@@ -61,3 +61,13 @@ User: "move them". `git push` failed here (no SSH key). User: Claude cannot
 push; show what to push instead (rule recorded). Commands given to the user.
 User pushed. Verified over HTTPS: fork `master` = 88e0126 (upstream),
 `mboot-68k-dev` = 787f00e, local branch tracks `origin/mboot-68k-dev`.
+
+## Resumed: decisions
+User: D1 (b) little-endian like bbc-basic-68k, D2 (a) fix in source. Upstream
+(R.T. Russell) hint: BBCSDL already accesses the heap through macros
+(ILOAD/ISTORE … NLOAD/NSTORE, include/BBC.h:383-398) — redefine them to reverse
+byte order; "not sure that this is everything".
+Finding: the macros use `aligned(1)` typedefs, so on m68k gcc emits byte
+accesses → alignment-safe already for heap data. Uses: ILOAD 34, ISTORE 17,
+VLOAD 37, VSTORE 22, ULOAD/USTORE 19 each, SLOAD 19, … (5 core files).
+Spec v0.3 (S2.5.1-S2.5.3), Plan P2 done, Tests T5/T5a/T5b.
