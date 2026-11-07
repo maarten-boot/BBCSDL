@@ -48,3 +48,10 @@ Asked D1 (byte order: a native BE / b LE like bbc-basic-68k / c BE with LE
 files) and D2 (unaligned access: a source helpers / b fault handler);
 recommended D1a + D2a. User: "we will continue later when upstream has a
 preference." → Work paused at P2, waiting for upstream (R.T. Russell) input on D1/D2.
+
+## Push
+User pushed. `origin` is now the fork (maarten-boot/BBCSDL); `mboot-68k-dev`
+tracks `origin/master`, so the planning commits landed on the fork's `master`.
+Offered: separate remote branch + reset fork master (force-push), and an
+`upstream` remote for rtrussell/BBCSDL. User: no upstream remote for now.
+Branch question still open.
