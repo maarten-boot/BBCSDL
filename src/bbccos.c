@@ -57,7 +57,7 @@ extern void *userRAM ;
 #define zero (char*) 0
 #endif
 
-#if defined(__arm__) || defined(__aarch64__) || defined(__arm64__) || defined(__EMSCRIPTEN__)
+#if defined(__arm__) || defined(__aarch64__) || defined(__arm64__) || defined(__EMSCRIPTEN__) || defined(BBC_DOUBLE)
 typedef __attribute__((aligned(1))) double variant;
 #else
 typedef long double variant ;

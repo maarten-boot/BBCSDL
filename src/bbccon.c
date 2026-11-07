@@ -1938,6 +1938,12 @@ pthread_t hThread = NULL ;
 
 	UserTimerID = StartTimer (250) ;
 
+#ifdef BBC_LEMEM
+	{
+	void bbdata_lefix (void) ;
+	bbdata_lefix () ;	// data-module tables little-endian (BBC_SWAPTEST)
+	}
+#endif
 	flags = 0 ;
 	exitcode = entry (immediate) ;
 

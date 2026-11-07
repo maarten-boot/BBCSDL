@@ -6,6 +6,8 @@
 *       Version 1.34b, 20-Feb-2023                                 *
 \******************************************************************/
 
+#include "bbcplat.h"
+
 // Constants:
 #define STACK_NEEDED 512
 #ifdef PICO
@@ -232,7 +234,7 @@ typedef struct tagPARM
 // to force the type word (.i.t or .s.t member) to a value other than 0 or -1. 
 typedef union __attribute__ ((packed)) __attribute__ ((aligned (4))) tagVAR
 {
-#if defined __arm__ || defined __aarch64__ || defined __EMSCRIPTEN__ || defined __ANDROID__
+#if defined __arm__ || defined __aarch64__ || defined __EMSCRIPTEN__ || defined __ANDROID__ || defined BBC_DOUBLE
 	double f ;
 #else
         long double f ;
@@ -290,7 +292,7 @@ typedef struct node node ;
 #endif
 
 // Register globals:
-#ifdef __llvm__
+#if defined __llvm__ || defined BBC_NOREGS
 extern signed char *esi ;		// Program pointer
 extern heapptr *esp ;			// Stack pointer
 #else
@@ -376,13 +378,99 @@ typedef __attribute__((aligned(1))) char* unaligned_char_ptr;
 typedef __attribute__((aligned(1))) VAR unaligned_VAR;
 
 // Helper macros to fix alignment problem:
-#ifdef PICO
+#ifdef BBC_LEMEM
+// Byte-wise access, so alignment-safe; byte order: little-endian on a
+// big-endian CPU, or reversed from native in the PC test build.
+#ifdef BBC_SWAPTEST
+#define LEB(i,n) ((n) - 1 - (i))	// big-endian on the little-endian PC
+#else
+#define LEB(i,n) (i)			// little-endian on the big-endian 68k
+#endif
+static inline unsigned int le_ld32 (const void *p)
+{
+	const unsigned char *b = (const unsigned char *) p ;
+	return (unsigned int) b[LEB(0,4)] | ((unsigned int) b[LEB(1,4)] << 8) |
+	       ((unsigned int) b[LEB(2,4)] << 16) | ((unsigned int) b[LEB(3,4)] << 24) ;
+}
+static inline void le_st32 (void *p, unsigned int v)
+{
+	unsigned char *b = (unsigned char *) p ;
+	b[LEB(0,4)] = v ; b[LEB(1,4)] = v >> 8 ; b[LEB(2,4)] = v >> 16 ; b[LEB(3,4)] = v >> 24 ;
+}
+static inline unsigned short le_ld16 (const void *p)
+{
+	const unsigned char *b = (const unsigned char *) p ;
+	return (unsigned short) (b[LEB(0,2)] | (b[LEB(1,2)] << 8)) ;
+}
+static inline void le_st16 (void *p, unsigned short v)
+{
+	unsigned char *b = (unsigned char *) p ;
+	b[LEB(0,2)] = v ; b[LEB(1,2)] = v >> 8 ;
+}
+static inline unsigned long long le_ld64 (const void *p)
+{
+#ifdef BBC_SWAPTEST
+	return ((unsigned long long) le_ld32 (p) << 32) | le_ld32 ((const char *) p + 4) ;
+#else
+	return le_ld32 (p) | ((unsigned long long) le_ld32 ((const char *) p + 4) << 32) ;
+#endif
+}
+static inline void le_st64 (void *p, unsigned long long v)
+{
+#ifdef BBC_SWAPTEST
+	le_st32 (p, v >> 32) ; le_st32 ((char *) p + 4, v) ;
+#else
+	le_st32 (p, v) ; le_st32 ((char *) p + 4, v >> 32) ;
+#endif
+}
+// A variant on the heap: 8 bytes (long long, double, or string p and l) + type word
+static inline VAR le_ldv (const void *p)
+{
+	VAR v ;
+	v.i.t = (short) le_ld16 ((const char *) p + 8) ;
+	if (v.s.t == -1)
+	    {
+		v.s.p = le_ld32 (p) ;
+		v.s.l = le_ld32 ((const char *) p + 4) ;
+	    }
+	else
+		v.i.n = (long long) le_ld64 (p) ;
+	return v ;
+}
+static inline void le_stv (void *p, VAR v)
+{
+	le_st16 ((char *) p + 8, (unsigned short) v.i.t) ;
+	if (v.s.t == -1)
+	    {
+		le_st32 (p, v.s.p) ;
+		le_st32 ((char *) p + 4, v.s.l) ;
+	    }
+	else
+		le_st64 (p, (unsigned long long) v.i.n) ;
+}
+#define ILOAD(p)    ((int) le_ld32 (p))
+#define ISTORE(p,i) le_st32 ((p), (unsigned int)(i))
+#define TLOAD(p)    ((intptr_t) le_ld32 (p))
+#define TSTORE(p,i) le_st32 ((p), (unsigned int)(intptr_t)(i))
+#define ULOAD(p)    le_ld32 (p)
+#define USTORE(p,i) le_st32 ((p), (unsigned int)(i))
+#define SLOAD(p)    le_ld16 (p)
+#define SSTORE(p,i) le_st16 ((p), (unsigned short)(i))
+#define VLOAD(p)    ((void *)(intptr_t) le_ld32 (p))
+#define VSTORE(p,i) le_st32 ((p), (unsigned int)(intptr_t)(i))
+#define CLOAD(p)    ((char *)(intptr_t) le_ld32 (p))
+#define CSTORE(p,i) le_st32 ((p), (unsigned int)(intptr_t)(i))
+#define NLOAD(p)    le_ldv (p)
+#define NSTORE(p,i) le_stv ((p), (i))
+#elif defined PICO
 static inline int ILOAD(void* p){ return (intptr_t)p&3 ? *((unaligned_int*)p) : *((int*)p); }
 static inline void ISTORE(void* p, int i){ if ((intptr_t)p&3) *((unaligned_int*)p) = i; else *((int *)p) = i; }
 #else
 #define ILOAD(p)    *((unaligned_int*)(p))
 #define ISTORE(p,i) *((unaligned_int*)(p)) = i
 #endif 
+
+#ifndef BBC_LEMEM
 
 #define TLOAD(p)    *((unaligned_intptr_t*)(p))
 #define TSTORE(p,i) *((unaligned_intptr_t*)(p)) = i 
@@ -396,3 +484,4 @@ static inline void ISTORE(void* p, int i){ if ((intptr_t)p&3) *((unaligned_int*)
 #define CSTORE(p,i) *((unaligned_char_ptr*)(p)) = i 
 #define NLOAD(p)    *((unaligned_VAR*)(p))
 #define NSTORE(p,i) *((unaligned_VAR*)(p)) = i
+#endif // BBC_LEMEM

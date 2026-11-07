@@ -47,7 +47,7 @@ void *putvar (void *, unsigned char *) ;
 // Global jump buffer:
 jmp_buf env ;
 
-#ifdef __llvm__
+#if defined __llvm__ || defined BBC_NOREGS
 signed char *esi ;		// Program pointer
 heapptr *esp ;			// Stack pointer
 #endif

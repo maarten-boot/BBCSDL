@@ -6,6 +6,8 @@
 *       Version v0.51, 20-Aug-2026                                 *
 \******************************************************************/
 
+#include "bbcplat.h"
+
 // System constants :
 
 #define YEAR    "2026"          // Copyright year
