@@ -18,4 +18,6 @@ Each test is traced to a Spec item.
 | T10 | S5.4 | `[` gives an error, no crash | todo |
 | T11 | S6.2 | Benchmarks run unmodified (except timing lines) on both BASICs on MAME | todo |
 | T12 | S6.3 | Shared test programs: outputs diffed and differences classified | todo |
+| T14 | S2.8 | Byte-swap test build: corpus output identical to the Linux reference | todo |
+| T15 | S6.3 | Linux reference run: every non-#typed test finishes (no timeout) | todo |
 | T13 | S8.1, S9 | CI: every `uses:` pinned to a 40-char SHA; image pinned by digest | todo |

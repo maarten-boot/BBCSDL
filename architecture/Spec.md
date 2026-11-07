@@ -1,6 +1,6 @@
 # Spec — BBC BASIC console edition (BBCTTY) on rosco-m68k, compared with bbc-basic-68k
 
-Status: v0.3 (2026-11-07). D1, D2 decided; D3 open.
+Status: v0.4 (2026-11-08). D1, D2 decided; D3 open.
 
 ## S1 Goal
 S1.1 Port this project's portable C interpreter (console edition: `bbmain.c`,
@@ -29,8 +29,19 @@ S2.5.2 NLOAD/NSTORE (VAR, 10 bytes): type word `t` at offset 8 (LE 16-bit); if
      one LE 64-bit value (long long or double).
 S2.5.3 Heap accesses that bypass the macros (raw casts) are found by tests and
      converted to the macros.
+S2.5.4 Also little-endian in memory: `stavar[]` (static integer variables), the
+     data-module tables (`sysvar`, `vdustr`, `ptfmt`, `b4fmt`, …) and every other
+     structure BASIC can read with indirection. C code reads them through the macros.
+S2.5.5 One switch in BBC.h selects this: `BBC_LEMEM` (set for `__m68k__` and for the
+     test build `BBC_SWAPTEST`), plus `BBC_DOUBLE` (VAR holds a double) and
+     `BBC_NOREGS` (esi/esp are ordinary globals).
 S2.6 Floating point: `double` (64-bit) as on ARM, not `long double`
      (m68k 96-bit extended would be emulated in software and be slow).
+
+S2.8 Byte-swap test build: Linux i386 (`-m32 -DBBC_SWAPTEST`), same 32-bit layout
+     as the 68k; the macros store multibyte values byte-reversed. Its test output
+     must equal the plain Linux reference (S6.3), which shows that no code mixes
+     macro and native access.
 
 ## S3 Toolchain
 S3.1 Primary: `m68k-elf-rosco-gcc` 13.3.1 (newlib) from the docker image
@@ -52,8 +63,10 @@ S5.2 OS layer: serial console in/out, `TIME` from the firmware 100 Hz tick
 S5.3 No threads, no `mmap`, no `dlopen`: replaced by single-threaded polling.
 S5.4 Inline assembler: phase 1 none (`[` gives an error); a 68k assembler is a
      later decision (D3).
-S5.5 Data module: a C or GNU-as `bbdata` for m68k (models: `bbdata_wasm32.c`,
-     `bbdata_arm_32.s`).
+S5.5 Data module: `bbdata_m68k.c`, a 32-bit C module derived from
+     `bbdata_wasm32.c`, used by the rosco build and the byte-swap test build; its
+     tables are converted to little-endian at start-up when `BBC_LEMEM` is set.
+S5.6 OS layer: `console/rosco/bbcrosco.c`, derived from `bbccon.c`.
 
 ## S6 Comparison (vs bbc-basic-68k)
 S6.1 Size: code/data size of the binary, free memory for BASIC at start-up.

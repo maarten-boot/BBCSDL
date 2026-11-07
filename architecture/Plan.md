@@ -1,13 +1,15 @@
 # Plan
 
-Status: v0.3 (2026-11-07).
+Status: v0.4 (2026-11-08).
 
 | ID | Step | Spec | Status |
 |----|------|------|--------|
 | P0 | Planning docs (architecture/, Changes.md) | S9 | done |
 | P1 | Clarify scope | S1–S8 | done (except D1–D3) |
 | P2 | Decide byte order (D1) and alignment strategy (D2) | S2.4, S2.5 | done: D1=b, D2=a |
-| P3 | Host-side check: build the console edition on Linux, run bbc-basic-68k's `test/bas/*.in` → reference outputs | S6.3 | in progress |
+| P3 | Linux reference: build the console edition, run the corpus → `build/bas/host/` | S6.3 | in progress (runner done, full run going) |
+| P3a | BBC.h switches (BBC_LEMEM, BBC_DOUBLE, BBC_NOREGS), `bbdata_m68k.c` | S2.5.5, S5.5 | todo |
+| P3b | Byte-swap test build (i386, BBC_SWAPTEST); fix mixed accesses until it equals P3 | S2.5, S2.8 | todo |
 | P4 | Build skeleton: makefile in docker, `bbdata_m68k`, stub assembler, OS glue (`bbccon` replacement for rosco) → links | S3, S5 | todo |
 | P5 | Boot to `>` prompt on r68k; PRINT, loops, strings | S5.1, S5.2 | todo |
 | P6 | Fix alignment/endianness faults until the test programs pass on r68k | S2.4, S2.5, S6.3 | todo |
