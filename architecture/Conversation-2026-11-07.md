@@ -59,3 +59,5 @@ Branch question still open.
 ## Move commits off master
 User: "move them". `git push` failed here (no SSH key). User: Claude cannot
 push; show what to push instead (rule recorded). Commands given to the user.
+User pushed. Verified over HTTPS: fork `master` = 88e0126 (upstream),
+`mboot-68k-dev` = 787f00e, local branch tracks `origin/mboot-68k-dev`.
