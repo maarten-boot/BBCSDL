@@ -449,19 +449,19 @@ static inline void le_stv (void *p, VAR v)
 		le_st64 (p, (unsigned long long) v.i.n) ;
 }
 #define ILOAD(p)    ((int) le_ld32 (p))
-#define ISTORE(p,i) le_st32 ((p), (unsigned int)(i))
+#define ISTORE(p,i) le_st32 ((void *)(p), (unsigned int)(i))
 #define TLOAD(p)    ((intptr_t) le_ld32 (p))
-#define TSTORE(p,i) le_st32 ((p), (unsigned int)(intptr_t)(i))
+#define TSTORE(p,i) le_st32 ((void *)(p), (unsigned int)(intptr_t)(i))
 #define ULOAD(p)    le_ld32 (p)
-#define USTORE(p,i) le_st32 ((p), (unsigned int)(i))
+#define USTORE(p,i) le_st32 ((void *)(p), (unsigned int)(i))
 #define SLOAD(p)    le_ld16 (p)
-#define SSTORE(p,i) le_st16 ((p), (unsigned short)(i))
+#define SSTORE(p,i) le_st16 ((void *)(p), (unsigned short)(i))
 #define VLOAD(p)    ((void *)(intptr_t) le_ld32 (p))
-#define VSTORE(p,i) le_st32 ((p), (unsigned int)(intptr_t)(i))
+#define VSTORE(p,i) le_st32 ((void *)(p), (unsigned int)(intptr_t)(i))
 #define CLOAD(p)    ((char *)(intptr_t) le_ld32 (p))
-#define CSTORE(p,i) le_st32 ((p), (unsigned int)(intptr_t)(i))
+#define CSTORE(p,i) le_st32 ((void *)(p), (unsigned int)(intptr_t)(i))
 #define NLOAD(p)    le_ldv (p)
-#define NSTORE(p,i) le_stv ((p), (i))
+#define NSTORE(p,i) le_stv ((void *)(p), (i))
 #elif defined PICO
 static inline int ILOAD(void* p){ return (intptr_t)p&3 ? *((unaligned_int*)p) : *((int*)p); }
 static inline void ISTORE(void* p, int i){ if ((intptr_t)p&3) *((unaligned_int*)p) = i; else *((int *)p) = i; }

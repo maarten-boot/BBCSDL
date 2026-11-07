@@ -19,4 +19,11 @@
 #define BBC_NOREGS 1
 #endif
 
+// With a double variant, the long double maths functions are not wanted
+// (on the 68k they would be 96-bit and emulated in software):
+#ifdef BBC_DOUBLE
+#define truncl trunc
+#define floorl floor
+#endif
+
 #endif

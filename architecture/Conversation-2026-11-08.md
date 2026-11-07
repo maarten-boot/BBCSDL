@@ -32,3 +32,31 @@
   macros do on the big-endian 68k. Any place that mixes macro and native access then
   fails the same way on the PC as on the rosco — but runs natively, in minutes.
   Must match the plain Linux reference output before moving to the 68k.
+
+## Progress (night of 11-07/08)
+- P3 done: Linux reference, 235 tests run, 2 timeouts (`kw/AUTO`, `bas/x03textprog`:
+  both stay in AUTO mode, which only Escape ends) → `build/bas/host/`.
+- P3a done: `include/bbcplat.h` (BBC_LEMEM/BBC_DOUBLE/BBC_NOREGS, truncl/floorl → double),
+  LE byte-wise macros in BBC.h; data module generated from `bbdata_arm_32.s`
+  (`tools/mkdata.py`, 151 words made LE at start-up by `lefix.c`).
+  No multi-byte C-native variable lands on an odd address (checked with nm).
+- P3b started: swap-test build works (`console/rosco/swaptest.sh`); corpus run vs host
+  started in the background (results not yet looked at).
+  Note: the swap build cannot be identical to the host — byte views (`?^A%`) are
+  reversed by design, and data built byte-wise then read with a macro reads wrong
+  there but right on the 68k. It finds native/macro mixing; r68k is the final judge.
+- P4: `console/rosco/` Makefile + `dmake.sh` (pinned image, `--group-add 1001` for the
+  linuxbrew toolchain), `bbcrosco.c` (from bbccon.c: polled serial input, 100 Hz tick,
+  plain SYS calls, VDU-queue ints read byte-wise LE, getims via memcpy), `posix.c` stubs
+  (usleep, getcwd; chdir/mkdir/rmdir ENOSYS). Links: ROSCODE1.BIN 266 KB
+  (text 257 KB, data 4.6 KB, bss 100 KB). No compiler warnings.
+- First r68k boot: the program starts and sends `ESC[6n` (newlib reports a tty, so
+  bbccos uses ANSI mode and waits for a cursor report). Next: answer it in the runner
+  or choose plain mode (isatty → 0) for phase 1.
+- User: "going to bed" — stopped here.
+
+## Next steps
+1. Read the swap-test results (`build/bas/swap/`, diff vs `build/bas/host/`).
+2. r68k: decide ANSI vs plain console mode; get to the `>` prompt (P5).
+3. ESCape/ON TIME need a timer interrupt (chain the firmware tick) — P7.
+4. Open questions for upstream: value of `@platform%` for the rosco (8 for now).

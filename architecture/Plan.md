@@ -7,11 +7,11 @@ Status: v0.4 (2026-11-08).
 | P0 | Planning docs (architecture/, Changes.md) | S9 | done |
 | P1 | Clarify scope | S1–S8 | done (except D1–D3) |
 | P2 | Decide byte order (D1) and alignment strategy (D2) | S2.4, S2.5 | done: D1=b, D2=a |
-| P3 | Linux reference: build the console edition, run the corpus → `build/bas/host/` | S6.3 | in progress (runner done, full run going) |
-| P3a | BBC.h switches (BBC_LEMEM, BBC_DOUBLE, BBC_NOREGS), `bbdata_m68k.c` | S2.5.5, S5.5 | todo |
-| P3b | Byte-swap test build (i386, BBC_SWAPTEST); fix mixed accesses until it equals P3 | S2.5, S2.8 | todo |
-| P4 | Build skeleton: makefile in docker, `bbdata_m68k`, stub assembler, OS glue (`bbccon` replacement for rosco) → links | S3, S5 | todo |
-| P5 | Boot to `>` prompt on r68k; PRINT, loops, strings | S5.1, S5.2 | todo |
+| P3 | Linux reference: build the console edition, run the corpus → `build/bas/host/` | S6.3 | done: 235 run, 2 AUTO timeouts |
+| P3a | BBC.h switches (BBC_LEMEM, BBC_DOUBLE, BBC_NOREGS), data module from bbdata_arm_32.s + lefix | S2.5.5, S5.5 | done |
+| P3b | Byte-swap test build (i386, BBC_SWAPTEST); fix mixed accesses until it equals P3 | S2.5, S2.8 | in progress (build ok, corpus run started) |
+| P4 | Build skeleton: makefile in docker, `bbdata_m68k`, stub assembler, OS glue (`bbccon` replacement for rosco) → links | S3, S5 | done (ROSCODE1.BIN 266 KB) |
+| P5 | Boot to `>` prompt on r68k; PRINT, loops, strings | S5.1, S5.2 | started: boots, waits on ESC[6n |
 | P6 | Fix alignment/endianness faults until the test programs pass on r68k | S2.4, S2.5, S6.3 | todo |
 | P7 | Files on SD card, TIME, ESCape, *BYE | S5.2 | todo |
 | P8 | Run on MAME; size and benchmark comparison vs bbc-basic-68k | S6.1, S6.2 | todo |

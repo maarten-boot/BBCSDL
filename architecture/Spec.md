@@ -63,10 +63,12 @@ S5.2 OS layer: serial console in/out, `TIME` from the firmware 100 Hz tick
 S5.3 No threads, no `mmap`, no `dlopen`: replaced by single-threaded polling.
 S5.4 Inline assembler: phase 1 none (`[` gives an error); a 68k assembler is a
      later decision (D3).
-S5.5 Data module: `bbdata_m68k.c`, a 32-bit C module derived from
-     `bbdata_wasm32.c`, used by the rosco build and the byte-swap test build; its
-     tables are converted to little-endian at start-up when `BBC_LEMEM` is set.
-S5.6 OS layer: `console/rosco/bbcrosco.c`, derived from `bbccon.c`.
+S5.5 Data module: generated from `src/bbdata_arm_32.s` by `console/rosco/tools/mkdata.py`
+     (the in-browser C module needs a BBC.h not in this repository); the BASIC-visible
+     tables are made little-endian at start-up by `lefix.c` when `BBC_LEMEM` is set.
+S5.6 OS layer: `console/rosco/bbcrosco.c`, derived from `bbccon.c`; `posix.c` for the
+     POSIX calls newlib lacks.
+S5.7 `@platform%` = 8 for the rosco (provisional, to agree with upstream).
 
 ## S6 Comparison (vs bbc-basic-68k)
 S6.1 Size: code/data size of the binary, free memory for BASIC at start-up.
