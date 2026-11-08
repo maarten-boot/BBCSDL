@@ -219,11 +219,11 @@ void storen (VAR v, void *ptr, unsigned char type)
 			if (v.i.t == 0)
 				v.f = v.i.n ;
 			v.d.d = v.f ;
-			if ((v.s.l == 0x7FF00000) || (v.s.l == 0xFFF00000))
+			if ((v.NHI == 0x7FF00000) || (v.NHI == 0xFFF00000))
 				error (20, NULL) ; // 'Number too big'
-			if (v.s.l == 0) v.d.d = 0.0 ;
-			USTORE(ptr, v.s.p) ;
-			USTORE((char *)ptr + 4, v.s.l) ;
+			if (v.NHI == 0) v.d.d = 0.0 ;
+			USTORE(ptr, v.NLO) ;
+			USTORE((char *)ptr + 4, v.NHI) ;
 			}
 			break ;
 
@@ -231,7 +231,7 @@ void storen (VAR v, void *ptr, unsigned char type)
 			// *(int *)ptr = (int) v.s.p ;
 			// *(int *)((char *)ptr + 4) = v.s.l ;
 			// *(short *)((char *)ptr + 8) = v.s.t ;
-			memcpy (ptr, &v.s.p, 10) ; // may be unaligned
+			NSTORE(ptr, v) ; // may be unaligned
 			break ;
 
 		case 40:
@@ -244,7 +244,8 @@ void storen (VAR v, void *ptr, unsigned char type)
 			    }
 			// *(int *)ptr = (int) v.s.p ;
 			// *(int *)((char *)ptr + 4) = v.s.l ;
-			memcpy (ptr, &v.s.p, 8) ; // may be unaligned
+			USTORE(ptr, v.NLO) ; // may be unaligned
+			USTORE((char *)ptr + 4, v.NHI) ;
 			break ;
 
 		case 32:
@@ -668,6 +669,16 @@ static void savloc (void *ptr, unsigned char type)
 	check () ;
 }
 
+// A numeric variant saved on the BASIC stack by savloc (three native ints):
+static VAR stkvar (heapptr *p)
+{
+	VAR v ;
+	v.s.p = p[0] ;
+	v.s.l = p[1] ;
+	v.s.t = (short) p[2] ;
+	return v ;
+}
+
 // Restore LOCALs or formal parameters from stack:
 static void resloc (void)
 {
@@ -692,7 +703,7 @@ static void resloc (void)
 		else if (type < 128)
 		    {
 			if (ptr != NULL)
-				storen (NLOAD(esp), ptr, type) ;
+				storen (stkvar (esp), ptr, type) ;
 			esp += 3 ;
 		    }
 		else if (type == 136)
@@ -745,7 +756,7 @@ static void unstack (int count)
 		    }
 		else if (type < 128)
 		    {
-			storen (NLOAD(esp), ptr, type) ; // numeric
+			storen (stkvar (esp), ptr, type) ; // numeric
 			esp += 3 ;
 		    }
 		else
@@ -1760,8 +1771,8 @@ VAR xeq (void)
 					else
 					    {
 						func = (void *) n ;
-						func (stavar[1], stavar[2], stavar[3],
-						      stavar[4], stavar[5], stavar[6], buff) ;
+						func (ILOAD(&stavar[1]), ILOAD(&stavar[2]), ILOAD(&stavar[3]),
+						      ILOAD(&stavar[4]), ILOAD(&stavar[5]), ILOAD(&stavar[6]), buff) ;
 					    }
 					}
 				    break ;
@@ -2281,7 +2292,7 @@ VAR xeq (void)
 					signed char al ;
 					VAR v ;
 					unsigned char mode = 0 ;
-					int field = stavar[0] & 0xFF ;
+					int field = ILOAD(&stavar[0]) & 0xFF ;
 
 					while (1)
 					    {
@@ -2303,7 +2314,7 @@ VAR xeq (void)
 						else if (al == ',')
 						    {
 							mode &= ~2 ;
-							field = stavar[0] & 0xFF ;
+							field = ILOAD(&stavar[0]) & 0xFF ;
 							if (field)
 							while (vcount % field)
 								outchr (' ') ;
@@ -2321,7 +2332,7 @@ VAR xeq (void)
 								if (mode & BIT1)
 								    strhex (v, accs, field) ;
 								else
-								    str (v, accs, (stavar[0] & 0xFFFF00) + field) ;
+								    str (v, accs, (ILOAD(&stavar[0]) & 0xFFFF00) + field) ;
 								text (accs) ;
 							    }
 						    }
@@ -3026,7 +3037,7 @@ VAR xeq (void)
 
 					type = (char) (int) *(esp + 8 + STRIDE) ;
 					v = loadn (ptr, type) ;
-					s.i.t = *(short *)(esp + 4 + STRIDE) ;
+					s.i.t = (short) *(int *)(esp + 4 + STRIDE) ; // an int slot (any byte order)
 					s.i.n = *(long long *)(esp + 2 + STRIDE) ;
 #if !(defined(__GNUC__) && (__GNUC__ >= 7) || defined(__clang__) && (__clang_major__ >= 4))
 					if ((v.i.t == 0) && (s.i.t == 0) && ((((tmpll = v.i.n + s.i.n) ^
@@ -3052,8 +3063,8 @@ VAR xeq (void)
 					    }
 					storen (v, ptr, type) ;
 
-					al = *(signed char *)(esp + 1 + STRIDE) ;
-					L.i.t = *(short *)(esp + 7 + STRIDE) ;
+					al = (signed char) *(int *)(esp + 1 + STRIDE) ; // an int slot
+					L.i.t = (short) *(int *)(esp + 7 + STRIDE) ; // an int slot
 					L.i.n = *(long long*)(esp + 5 + STRIDE) ;
 					if ((v.i.t == 0) && (L.i.t == 0))
 					    {

@@ -1089,8 +1089,8 @@ void *sysadr (char *name)
 // Call an emulated OS subroutine (if CALL or USR to an address < 0x10000)
 int oscall (int addr)
 {
-	int al = stavar[1] ;
-	void *xy = (void *) ((size_t)stavar[24] | ((size_t)stavar[25] << 8)) ;
+	int al = LE32LOAD(&stavar[1]) ;
+	void *xy = (void *) ((size_t)LE32LOAD(&stavar[24]) | ((size_t)LE32LOAD(&stavar[25]) << 8)) ;
 	switch (addr)
 	    {
 		case 0xFFE0: // OSRDCH

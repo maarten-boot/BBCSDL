@@ -123,6 +123,33 @@ static void *getvbr(unsigned char *ptype)
 	return getvar (ptype) ;
 }
 
+#ifdef BBC_NOLLFMT
+// Format a 64-bit integer (base 10 or 16), right-aligned in 'width':
+// for a C library without long long in printf.
+static int fmtll (char *dst, long long n, int base, int width)
+{
+	char tmp[24] ;
+	int i = 0, len = 0 ;
+	int neg = (base == 10) && (n < 0) ;
+	unsigned long long u = neg ? -(unsigned long long) n : (unsigned long long) n ;
+	do
+	    {
+		int d = u % base ;
+		tmp[i++] = d < 10 ? '0' + d : 'A' + d - 10 ;
+		u /= base ;
+	    }
+	while (u) ;
+	if (neg)
+		tmp[i++] = '-' ;
+	while (len < width - i)
+		dst[len++] = ' ' ;
+	while (i)
+		dst[len++] = tmp[--i] ;
+	dst[len] = 0 ;
+	return len ;
+}
+#endif
+
 // Convert a numeric value to a NUL-terminated decimal string:
 int str (VAR v, char *dst, int format)
 {
@@ -150,7 +177,11 @@ int str (VAR v, char *dst, int format)
 		if (prec == 0) prec = 9 ;
 		if (v.i.t == 0)
 		    {
+#ifdef BBC_NOLLFMT
+			n = fmtll (dst, v.i.n, 10, 0) ;
+#else
 			n = sprintf(dst, "%lld", v.i.n) ; // ARM (no 80-bit float)
+#endif
 			if (n <= prec) break ;
 			v.f = v.i.n ;
 		    }
@@ -206,7 +237,11 @@ int strhex (VAR v, char *dst, int field)
 		n &= 0xFFFFFFFF ;
 	    }
 
+#ifdef BBC_NOLLFMT
+	return fmtll (dst, n, 16, field) ;
+#else
 	return sprintf(dst, fmt, field, n) ;
+#endif
 }
 
 // Multiply by an integer-power of 10:
@@ -392,8 +427,8 @@ VAR loadn (void *ptr, unsigned char type)
 			ecx = (ecx << 20) | ((unsigned int)edx >> 12) ;
 			edx = edx << 20 ;
 			if (sign) ecx |= 0x80000000 ;
-			v.s.p = edx ;
-			v.s.l = ecx ;
+			v.NLO = edx ;
+			v.NHI = ecx ;
 			v.i.t = 1 ; // ARM
 			v.f = v.d.d ;
 			}
@@ -407,9 +442,8 @@ VAR loadn (void *ptr, unsigned char type)
 				break ;
 			    }
 			{
-			// v.s.p = *(heapptr*)ptr ;
-			// v.s.l = *(int *)((char *)ptr + 4) ;
-			memcpy (&v.s.p, ptr, 8) ; // may be unaligned
+			v.NLO = ULOAD(ptr) ; // may be unaligned
+			v.NHI = ULOAD((char *)ptr + 4) ;
 			v.i.t = 1 ; // ARM
 			v.f = v.d.d ;
 			}
@@ -419,14 +453,13 @@ VAR loadn (void *ptr, unsigned char type)
 			// v.s.p = *(heapptr*)ptr ;
 			// v.s.l = *(int *)((char *)ptr + 4) ;
 			// v.i.t = *(short *)((char *)ptr + 8) ;
-			memcpy (&v.s.p, ptr, 10) ; // may be unaligned
+			v = NLOAD(ptr) ; // may be unaligned
 			break ;
 
 		case 40:
 			v.i.t = 0 ;
-			// v.s.p = *(heapptr*)ptr ;
-			// v.s.l = *(int *)((char *)ptr + 4) ;
-			memcpy (&v.s.p, ptr, 8) ; // may be unaligned
+			v.NLO = ULOAD(ptr) ; // may be unaligned
+			v.NHI = ULOAD((char *)ptr + 4) ;
 			break ;
 
 		case 32:
@@ -589,7 +622,7 @@ VAR math (VAR x, signed char op, VAR y)
 			    {
 #if !(defined(__GNUC__) && (__GNUC__ >= 7) || defined(__clang__) && (__clang_major__ >= 4))
 				long long sum = x.i.n + y.i.n ;
-				if (((int)(x.s.l ^ y.s.l) < 0) || ((sum ^ x.i.n) >= 0))
+				if (((int)(x.NHI ^ y.NHI) < 0) || ((sum ^ x.i.n) >= 0))
 #else
 				long long sum ;
 				if (! __builtin_saddll_overflow (x.i.n, y.i.n, &sum))
@@ -608,7 +641,7 @@ VAR math (VAR x, signed char op, VAR y)
 			    {
 #if !(defined(__GNUC__) && (__GNUC__ >= 7) || defined(__clang__) && (__clang_major__ >= 4))
 				long long dif = x.i.n - y.i.n ;
-				if (((int)(x.s.l ^ y.s.l) >= 0) || ((dif ^ x.i.n) >= 0))
+				if (((int)(x.NHI ^ y.NHI) >= 0) || ((dif ^ x.i.n) >= 0))
 #else
 				long long dif ;
 				if (! __builtin_ssubll_overflow (x.i.n, y.i.n, &dif))
@@ -1092,8 +1125,8 @@ VAR item (void)
 			else
 			    {
 				func = (void *) n ;
-				v.i.n = func (stavar[1], stavar[2], stavar[3],
-					      stavar[4], stavar[5], stavar[6]) ;
+				v.i.n = func (ILOAD(&stavar[1]), ILOAD(&stavar[2]), ILOAD(&stavar[3]),
+					      ILOAD(&stavar[4]), ILOAD(&stavar[5]), ILOAD(&stavar[6])) ;
 			    }
 			}
 			return v ;
@@ -1925,8 +1958,8 @@ VAR item (void)
 			else
 			    {
 				v = itemn () ;
-				if (stavar[0] & 0xFF000000)
-					v.s.l = str (v, accs, stavar[0] & 0xFFFF00) ;
+				if (ILOAD(&stavar[0]) & 0xFF000000)
+					v.s.l = str (v, accs, ILOAD(&stavar[0]) & 0xFFFF00) ;
 				else
 					v.s.l = str (v, accs, 0x900) ;
 			    }
@@ -2309,9 +2342,9 @@ VAR item (void)
 					while (range0 (*++esi)) ;
 					v.i.t = 0 ;
 #if defined(__x86_64__) || defined(__aarch64__)
-					v.i.n = (unsigned int) stavar[16] + ((long long) stavar[17] << 32) ;
+					v.i.n = (unsigned int) ILOAD(&stavar[16]) + ((long long) ILOAD(&stavar[17]) << 32) ;
 #else
-					v.i.n = stavar[16] ;
+					v.i.n = ILOAD(&stavar[16]) ;
 #endif
 					return v ;
 				    }

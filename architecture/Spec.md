@@ -1,6 +1,6 @@
 # Spec — BBC BASIC console edition (BBCTTY) on rosco-m68k, compared with bbc-basic-68k
 
-Status: v0.4 (2026-11-08). D1, D2 decided; D3 open.
+Status: v0.5 (2026-11-08). D1, D2 decided; D3 open.
 
 ## S1 Goal
 S1.1 Port this project's portable C interpreter (console edition: `bbmain.c`,
@@ -37,6 +37,12 @@ S2.5.5 One switch in BBC.h selects this: `BBC_LEMEM` (set for `__m68k__` and for
      `BBC_NOREGS` (esi/esp are ordinary globals).
 S2.6 Floating point: `double` (64-bit) as on ARM, not `long double`
      (m68k 96-bit extended would be emulated in software and be slow).
+S2.6.1 The halves of a numeric variant are `v.NLO`/`v.NHI` (BBC.h), not `s.p`/`s.l`,
+     which only coincide on a little-endian CPU.
+S2.6.2 Native C data (the BASIC stack, C locals) stays native; only memory BASIC
+     can see goes through the macros. Stack slots pushed as int are read as int.
+S2.6.3 64-bit integers are formatted without printf's `%lld` where the C library
+     lacks it (`BBC_NOLLFMT`, rosco newlib).
 
 S2.8 Byte-swap test build: Linux i386 (`-m32 -DBBC_SWAPTEST`), same 32-bit layout
      as the 68k; the macros store multibyte values byte-reversed. Its test output
@@ -55,8 +61,14 @@ S4.1 r68k (`../r68k`): functional tests, fast, inaccurate timing.
 S4.2 MAME rosco-emulator (`../rosco-emulator`, image `rosco-emulator:local`):
      timing measurements (same CPU timing as the board).
 
+S4.3 r68k `-d` input: r68k's own firmware and its DUART model both read stdin;
+     one key per session can be lost (see Conversation 2026-11-08). Needs a fix
+     in r68k or a test-only workaround (`R68K=1` build, not working yet). OPEN.
+
 ## S5 Port features
 S5.1 Interpreter: all of the non-graphics language the console edition supports.
+S5.2a Console mode: plain (VDU codes sent as they are, no cursor queries) in phase 1,
+     as the Linux edition with piped input; ANSI mode with `-DROSCO_ANSI` (later).
 S5.2 OS layer: serial console in/out, `TIME` from the firmware 100 Hz tick
      (`SDB_UPTICKS`), ESCape detection, files on the SD card (FAT) via the
      firmware/newlib, `*BYE` returns to the firmware.

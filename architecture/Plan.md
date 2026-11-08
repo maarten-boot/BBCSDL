@@ -11,7 +11,8 @@ Status: v0.4 (2026-11-08).
 | P3a | BBC.h switches (BBC_LEMEM, BBC_DOUBLE, BBC_NOREGS), data module from bbdata_arm_32.s + lefix | S2.5.5, S5.5 | done |
 | P3b | Byte-swap test build (i386, BBC_SWAPTEST); fix mixed accesses until it equals P3 | S2.5, S2.8 | in progress (build ok, corpus run started) |
 | P4 | Build skeleton: makefile in docker, `bbdata_m68k`, stub assembler, OS glue (`bbccon` replacement for rosco) → links | S3, S5 | done (ROSCODE1.BIN 266 KB) |
-| P5 | Boot to `>` prompt on r68k; PRINT, loops, strings | S5.1, S5.2 | started: boots, waits on ESC[6n |
+| P5 | Boot to `>` prompt on r68k; PRINT, loops, strings | S5.1, S5.2 | mostly done: prompt, core language works; r68k key loss open (S4.3) |
+| P5a | Test runner for r68k (stdin pipe, CR, prompt pacing, output cap) | S6.3 | todo (after S4.3) |
 | P6 | Fix alignment/endianness faults until the test programs pass on r68k | S2.4, S2.5, S6.3 | todo |
 | P7 | Files on SD card, TIME, ESCape, *BYE | S5.2 | todo |
 | P8 | Run on MAME; size and benchmark comparison vs bbc-basic-68k | S6.1, S6.2 | todo |

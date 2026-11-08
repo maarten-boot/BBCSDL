@@ -54,3 +54,17 @@ int chmod (const char *path, mode_t mode)
 {
 	return 0 ;	// FAT has no permissions to change
 }
+
+// bbccos.c translates VDU codes to ANSI sequences, and asks the terminal for
+// the cursor position (ESC[6n), only when stdin and stdout are terminals.
+// Phase 1 uses the plain console (VDU codes sent as they are), as the Linux
+// edition does with piped input; build with -DROSCO_ANSI for the ANSI one.
+// (newlib's own buffering decision uses _isatty, which this does not change.)
+int isatty (int fd)
+{
+#ifdef ROSCO_ANSI
+	return (fd >= 0) && (fd <= 2) ;
+#else
+	return 0 ;
+#endif
+}

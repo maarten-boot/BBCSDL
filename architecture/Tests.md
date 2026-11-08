@@ -8,7 +8,7 @@ Each test is traced to a Spec item.
 | T2 | S2.4 | Boot on r68k with odd-address faults enabled: no address error during start-up and the test suite | todo |
 | T3 | S5.1 | `PRINT 1+1`, `PRINT "A"+"B"`, `FOR`/`NEXT`, `REPEAT`, `DEF PROC/FN` give the reference output | todo |
 | T4 | S2.6 | Float output: `PRINT PI`, `SQR2`, `EXP1`, `1/3` match the Linux reference (double) | todo |
-| T5 | S2.5 | `A%=&12345678:PRINT ~?^A%, ~A%?1` → `78 56`; `!` on odd addresses; same bytes as on Linux | todo |
+| T5 | S2.5 | `A%=&12345678:PRINT ~?^A%, ~?(^A%+1)` → `78 56`; `!` on odd addresses (`B%!1`) | pass (r68k) |
 | T5a | S2.5.2 | `PRINT ~^A` dump of an int, a float and a string variable equals the Linux bytes | todo |
 | T5b | S2.5 | A program SAVEd on the rosco LOADs on Linux BBC BASIC and in bbc-basic-68k, and vice versa | todo |
 | T6 | S5.2 | `TIME` advances 100/s (±1 %) on MAME | todo |
@@ -20,4 +20,8 @@ Each test is traced to a Spec item.
 | T12 | S6.3 | Shared test programs: outputs diffed and differences classified | todo |
 | T14 | S2.8 | Byte-swap test build: corpus output identical to the Linux reference | todo |
 | T15 | S6.3 | Linux reference run: every non-#typed test finishes (no timeout) | todo |
+| T16 | S2.6.1 | `PRINT 7, 2^40, &FF, -7 MOD 3` and an integer variable print as on Linux | pass (r68k) |
+| T17 | S2.6.2 | `FOR` with integer, float and STEP 0.5; PROC parameters and LOCAL; recursive FN (6!=720) | pass (r68k) |
+| T18 | S2.5.4 | `@%` default 0x90A: `PRINT PI, SQR2` gives 10-wide columns | pass (r68k) |
+| T19 | S4.3 | 100 typed lines through r68k: no key lost | fail (one key lost) |
 | T13 | S8.1, S9 | CI: every `uses:` pinned to a 40-char SHA; image pinned by digest | todo |

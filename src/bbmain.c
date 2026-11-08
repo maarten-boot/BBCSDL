@@ -907,7 +907,7 @@ static unsigned int getsub (void **pebx, unsigned char *ptype)
 {
 	int dims ;
 	unsigned int eax ;
-	unsigned char *ebx = (unsigned char*) CLOAD(pebx) ;
+	unsigned char *ebx = *(unsigned char**)pebx ; // a C variable: native
 	unsigned int ecx, edx = 0 ;
 	if (ebx < (unsigned char*)2)
 		error(14, NULL) ; // 'Bad use of array'
@@ -1532,7 +1532,7 @@ int basic (void *ecx, void *edx, void *prompt)
 	int errcode ;
 	unsigned short autoinc = 0, autonum = 0 ;
 
-	stavar[0] = 0x90A ;	// Initialise @%
+	ISTORE(&stavar[0], 0x90A) ;	// Initialise @%
 	liston = 0x30 ;		// Initialise OPT/*FLOAT/*HEX/*LOWERCASE
 	lstopt = 3 ;		// Initialise LISTO
 	errtxt = szNotice ;

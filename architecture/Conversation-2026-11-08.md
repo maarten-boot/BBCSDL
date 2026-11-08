@@ -60,3 +60,35 @@
 2. r68k: decide ANSI vs plain console mode; get to the `>` prompt (P5).
 3. ESCape/ON TIME need a timer interrupt (chain the firmware tick) — P7.
 4. Open questions for upstream: value of `@platform%` for the rosco (8 for now).
+
+## Session resumed ("you can continue")
+- Swap-test corpus run (rerun, the first was killed with the session):
+  101 of 235 differ from the Linux reference — includes arrays (DIM) and PROC
+  parameters, both later found and fixed on the 68k; outputs can explode
+  (62 MB) → the runner needs an output cap (todo).
+- Rosco build on r68k (`-d`), plain console mode (`isatty` → 0 in posix.c, as the
+  Linux edition with piped input; `-DROSCO_ANSI` for ANSI): reaches the `>` prompt.
+- Bugs found and fixed (all neutral on little-endian platforms):
+  1. program area not zeroed (malloc) → "Bad program" → memset in bbcrosco.c;
+  2. `VAR` union: code used `s.p`/`s.l` as the low/high halves of the 64-bit
+     number → new `v.NLO`/`v.NHI` (BBC.h, endian-dependent); loadn/storen copy
+     heap ↔ VAR with ULOAD/USTORE/NLOAD/NSTORE instead of memcpy;
+  3. rosco newlib printf has no `%lld`/`%llX` → `fmtll()` in bbeval.c (BBC_NOLLFMT);
+  4. NEXT read int stack slots as short/char → read the int and narrow it;
+  5. `@%`, `A%`-`Z%` (stavar) read/written natively in C → ILOAD/ISTORE
+     (LE32LOAD in console files; LE helpers moved to bbcplat.h);
+  6. `getsub` read a C local through CLOAD → native read;
+  7. `savloc` pushes a VAR as 3 native ints, `resloc`/`unstack` popped it with
+     NLOAD → `stkvar()` pops field by field.
+- Works on r68k: arithmetic, floats, strings, `?`/`!` little-endian (`?^A%`=&78),
+  FOR/NEXT (int, float, STEP), arrays (1-D, 2-D, string, SUM), PROC/FN, LOCAL,
+  recursion, `@platform%`=8, HIMEM-LOMEM = 4.6 MB with 5 MB RAM.
+- r68k input finding (Spec S4.3): with `-d`, r68k's own firmware takes keys from
+  stdin for the firmware calls, and the DUART model also takes one from stdin
+  on a timer tick when its buffer is empty; nobody reads the DUART, so exactly one
+  key per session is lost (position depends on timing). The real firmware 2.42
+  polls the DUART itself (RECVCHAR, stage1/duart.asm), so on the board there is
+  one path. r68k's firmware leaves the SDB UART base (0x418) at 0.
+  Tried: real 2.42 ROM in r68k (boots, but finds no boot media); reading the DUART
+  directly (`R68K=1` test build) — prints nothing yet, not understood.
+  → Asked the user how to proceed (r68k is the user's repository).

@@ -2,10 +2,17 @@
 # Run through dmake.sh (the rosco toolchain image):
 #	./dmake.sh		build ../../build/rosco/ROSCODE1.BIN
 #	./dmake.sh clean
+#	./dmake.sh R68K=1	test build for the r68k emulator (-d), into
+#				../../build/rosco-r68k (Spec S4.3)
 # Spec: architecture/Spec.md (S2, S3, S5).
 
 TOP	= ../..
+ifeq ($(R68K),1)
+OUT	= $(TOP)/build/rosco-r68k
+XFLAGS	= -DR68K_DUART
+else
 OUT	= $(TOP)/build/rosco
+endif
 SRC	= $(TOP)/src
 CPU	= 68010
 
@@ -15,7 +22,7 @@ SIZE	= m68k-elf-rosco-size
 
 CFLAGS	= -mcpu=$(CPU) -I$(TOP)/include -I. -Wall -Wno-unused-result \
 	  -Wno-array-bounds -ffunction-sections -fdata-sections \
-	  --param=min-pagesize=0
+	  --param=min-pagesize=0 $(XFLAGS)
 FAST	= -O2 -ffast-math -fno-finite-math-only
 SMALL	= -Os
 LDFLAGS	= -mcpu=$(CPU) -Wl,--gc-sections -Wl,-Map=$(OUT)/bbcbasic.map

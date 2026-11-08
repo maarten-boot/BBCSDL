@@ -115,16 +115,23 @@ static int getinp (unsigned char *pinp)
 }
 
 // Move waiting characters from the serial port to the STDIN queue
-// (on other platforms a thread does this):
+// (on other platforms a thread does this).  With a DUART (rosco_m68k
+// Classic v2) its channel A is read directly, as the firmware's own
+// RECVCHAR does (it polls status bit 0, then reads the receive buffer):
+// in r68k the firmware calls and the DUART model are separate input
+// paths, and a character the DUART model takes would otherwise be lost.
+#define DUART_A 0xF00001	// channel A base (SRA at +2, RBA at +6)
+static volatile unsigned char *duart = NULL ;
+
 static void pollinp (void)
 {
-	while (mcCheckchar ())
+	while (duart ? (duart[2] & 1) : mcCheckchar ())
 	    {
 		unsigned char bl = inpqw ;
 		unsigned char al = (bl + 1) % QSIZE ;
 		if (al == inpqr)
 			return ;	// queue full: leave it in the UART
-		inputq[bl] = (unsigned char) mcReadchar () ;
+		inputq[bl] = duart ? duart[6] : (unsigned char) mcReadchar () ;
 		inpqw = al ;
 	    }
 }
@@ -542,6 +549,8 @@ void oswrch (unsigned char vdu)
 {
 	unsigned char *pqueue = vduq ;
 
+	pollinp () ;	// the UART holds only a few characters
+
 	if (optval & 0x0F)
 	    {
 		osbput ((void *)(size_t)(optval & 0x0F), vdu) ;
@@ -916,8 +925,8 @@ void *sysadr (char *name)
 // Call an emulated OS subroutine (if CALL or USR to an address < 0x10000)
 int oscall (int addr)
 {
-	int al = stavar[1] ;
-	void *xy = (void *) ((size_t)stavar[24] | ((size_t)stavar[25] << 8)) ;
+	int al = LE32LOAD(&stavar[1]) ;
+	void *xy = (void *) ((size_t)LE32LOAD(&stavar[24]) | ((size_t)LE32LOAD(&stavar[25]) << 8)) ;
 	switch (addr)
 	    {
 		case 0xFFE0: // OSRDCH
@@ -1394,6 +1403,13 @@ int main (int argc, char* argv[])
 	char *heap = sbrk (0) ;
 
 	platform = 8 ;	// @platform%: rosco-m68k (value to agree with upstream)
+	if ((_SDB_UART_BASE & 0xFFFFFF) == DUART_A)
+		duart = (volatile unsigned char *) DUART_A ;
+#ifdef R68K_DUART
+	// Test build for r68k -d: its own firmware leaves the SDB's UART base
+	// at 0, but its DUART model takes keys from stdin too (see Spec S4.3).
+	duart = (volatile unsigned char *) DUART_A ;
+#endif
 
 	size = (memtop () - STACK_RESERVE - LIBC_RESERVE - (size_t) heap) & -256 ;
 	while ((size >= MINIMUM_RAM) && (NULL == (userRAM = malloc (size))))
@@ -1403,6 +1419,7 @@ int main (int argc, char* argv[])
 		printf ("Couldn't allocate memory\r\n") ;
 		return 9 ;
 	    }
+	memset (userRAM, 0, PAGE_OFFSET + 0x100) ;	// no program (as mmap gives on Linux)
 	MaximumRAM = size ;
 	userTOP = userRAM + size ;
 	progRAM = userRAM + PAGE_OFFSET ;

@@ -257,6 +257,16 @@ typedef union __attribute__ ((packed)) __attribute__ ((aligned (4))) tagVAR
 	} d ;
 } VAR, *LPVAR ; 
 
+// The low and high 32-bit halves of a numeric variant (long long or double),
+// which share memory with the string descriptor's p and l: v.NLO, v.NHI.
+#if defined __BYTE_ORDER__ && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define NLO s.l
+#define NHI s.p
+#else
+#define NLO s.p
+#define NHI s.l
+#endif
+
 // String descriptor:
 typedef struct __attribute__ ((packed)) __attribute__ ((aligned (4))) tagSTR
 {
@@ -379,50 +389,7 @@ typedef __attribute__((aligned(1))) VAR unaligned_VAR;
 
 // Helper macros to fix alignment problem:
 #ifdef BBC_LEMEM
-// Byte-wise access, so alignment-safe; byte order: little-endian on a
-// big-endian CPU, or reversed from native in the PC test build.
-#ifdef BBC_SWAPTEST
-#define LEB(i,n) ((n) - 1 - (i))	// big-endian on the little-endian PC
-#else
-#define LEB(i,n) (i)			// little-endian on the big-endian 68k
-#endif
-static inline unsigned int le_ld32 (const void *p)
-{
-	const unsigned char *b = (const unsigned char *) p ;
-	return (unsigned int) b[LEB(0,4)] | ((unsigned int) b[LEB(1,4)] << 8) |
-	       ((unsigned int) b[LEB(2,4)] << 16) | ((unsigned int) b[LEB(3,4)] << 24) ;
-}
-static inline void le_st32 (void *p, unsigned int v)
-{
-	unsigned char *b = (unsigned char *) p ;
-	b[LEB(0,4)] = v ; b[LEB(1,4)] = v >> 8 ; b[LEB(2,4)] = v >> 16 ; b[LEB(3,4)] = v >> 24 ;
-}
-static inline unsigned short le_ld16 (const void *p)
-{
-	const unsigned char *b = (const unsigned char *) p ;
-	return (unsigned short) (b[LEB(0,2)] | (b[LEB(1,2)] << 8)) ;
-}
-static inline void le_st16 (void *p, unsigned short v)
-{
-	unsigned char *b = (unsigned char *) p ;
-	b[LEB(0,2)] = v ; b[LEB(1,2)] = v >> 8 ;
-}
-static inline unsigned long long le_ld64 (const void *p)
-{
-#ifdef BBC_SWAPTEST
-	return ((unsigned long long) le_ld32 (p) << 32) | le_ld32 ((const char *) p + 4) ;
-#else
-	return le_ld32 (p) | ((unsigned long long) le_ld32 ((const char *) p + 4) << 32) ;
-#endif
-}
-static inline void le_st64 (void *p, unsigned long long v)
-{
-#ifdef BBC_SWAPTEST
-	le_st32 (p, v >> 32) ; le_st32 ((char *) p + 4, v) ;
-#else
-	le_st32 (p, v) ; le_st32 ((char *) p + 4, v >> 32) ;
-#endif
-}
+// Byte-wise little-endian access (le_ld32 etc. in bbcplat.h).
 // A variant on the heap: 8 bytes (long long, double, or string p and l) + type word
 static inline VAR le_ldv (const void *p)
 {
